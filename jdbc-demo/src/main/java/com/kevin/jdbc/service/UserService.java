@@ -7,6 +7,7 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.PreparedStatementCallback;
 import org.springframework.jdbc.core.RowCallbackHandler;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import javax.sql.DataSource;
@@ -44,11 +45,14 @@ public class UserService {
      * @param id 用户id
      * @return 用户信息
      */
-    private User DataSourceImpl(Long id) {
+    private User dataSourceImpl(Long id) {
         User user = new User();
         Connection connection = null;
         try {
             connection = dataSource.getConnection();
+            boolean canTransactions = connection.getMetaData().supportsTransactions();
+            System.out.println("Now database canTransactions is ： " + canTransactions);
+
             PreparedStatement preparedStatement = connection.prepareStatement("select * from user where id = ?");
             preparedStatement.setLong(1, id);
 
@@ -77,6 +81,14 @@ public class UserService {
      */
     private User jdbcTemplateImpl(Long id) {
         User user = new User();
+
+        try {
+            boolean canTransactions = jdbcTemplate.getDataSource().getConnection().getMetaData().supportsTransactions();
+            System.out.println("Now database canTransactions is ： " + canTransactions);
+
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
 
         jdbcTemplate.query("select * from user where id = " + id, new RowCallbackHandler() {
             @Override
